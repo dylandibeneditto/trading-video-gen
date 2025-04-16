@@ -34,6 +34,7 @@ styles = SimpleNamespace(
     ),
     top_safe_area=50,
     trailing_safe_area=(100,100),
+    candle_gap=8,
 )
 
 if setting == "debug anim":
