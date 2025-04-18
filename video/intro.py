@@ -32,9 +32,10 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
     max_price = df[['Open', 'Close', 'High', 'Low']].max().max()
     normalize = lambda price: screen_middle - (final_close - price) / (max_price - min_price) * (video.height / 2 - 100)
 
+    last_close_y = None
     for i, (index, row) in enumerate(df.iterrows()):
-        open_y = p(normalize(row['Open'].item()))
         close_y = p(normalize(row['Close'].item()))
+        open_y = last_close_y if last_close_y is not None else p(normalize(row['Open'].item()))
         high_y = p(normalize(row['High'].item()))
         low_y = p(normalize(row['Low'].item()))
 
@@ -43,8 +44,10 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
 
         cx = (sx + ex) / 2
 
-        body_color = styles.colors.up if row['Close'].item() < row['Open'].item() else styles.colors.down
+        body_color = styles.colors.up if close_y < open_y else styles.colors.down
         draw.rectangle((p(cx-2), min(high_y, low_y), p(cx+2), max(high_y, low_y)), fill=body_color)
         draw.rectangle((p(sx), min(open_y, close_y), p(ex), max(open_y, close_y)), fill=body_color)
+
+        last_close_y = close_y
 
     video.pipe(image)
