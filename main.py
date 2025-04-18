@@ -9,9 +9,16 @@ from data.positions import load_data, add_indicators, find_teaching_signals
 def create_video(name, df):
     with Video((styles.render.width, styles.render.height), framerate=styles.render.fps, path=f"./out/{name}.mp4", prompt_deletion=False) as video:
         with Progress() as progress:
-            task = progress.add_task("Creating video...", total=video.seconds_to_frame(5))
-            for i in range(video.seconds_to_frame(5)):
-                render_intro(video, i, video.seconds_to_frame(5), df.iloc[:20])
+            task = progress.add_task("Creating video...", total=video.seconds_to_frame(10))
+
+            final_intro = None
+            
+            # intro, 5 seconds
+            for i in range(video.seconds_to_frame(10)):
+                image = render_intro(video, i, video.seconds_to_frame(10), df.iloc[:20])
+                video.pipe(image)
+                if i == video.seconds_to_frame(10) - 1:
+                    final_intro = image
                 progress.update(task, advance=1)
 
 if __name__ == "__main__":
