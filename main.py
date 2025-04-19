@@ -1,33 +1,41 @@
 from fmov import Video
-from rich.progress import Progress
+from rich.progress import Progress, track
 
 from styles import styles
 from video.intro import render_intro
 
 from data.positions import load_data, add_indicators, find_teaching_signals
 
+prog = None
+
 def create_video(name, df):
     with Video((styles.render.width, styles.render.height), framerate=styles.render.fps, path=f"./out/{name}.mp4", prompt_deletion=False) as video:
-        with Progress() as progress:
-            task = progress.add_task("Creating video...", total=video.seconds_to_frame(10))
+        task = prog.add_task("Creating video...", total=video.seconds_to_frame(5))
 
-            final_intro = None
-            
-            # intro, 5 seconds
-            for i in range(video.seconds_to_frame(10)):
-                image = render_intro(video, i, video.seconds_to_frame(10), df.iloc[:20])
-                video.pipe(image)
-                if i == video.seconds_to_frame(10) - 1:
-                    final_intro = image
-                progress.update(task, advance=1)
+        final_intro = None
+        
+        # intro, 5 seconds
+        for i in range(video.seconds_to_frame(5)):
+            image = render_intro(video, i, video.seconds_to_frame(5), df.iloc[:20])
+            video.pipe(image)
+            if i == video.seconds_to_frame(5) - 1:
+                final_intro = image
+            prog.update(task, advance=1)
+
+        prog.remove_task(task)
 
 if __name__ == "__main__":
-    ticker = "^NDX"
+    ticker = "AAPL"
     df = load_data(ticker, "2025-02-28", "2025-04-17", interval="5m")
     df = add_indicators(df)
 
     signals = find_teaching_signals(df)
     print(f"Found {len(signals)} teaching-quality signals.")
 
-    for i, (idx, signal_type) in enumerate(signals):
-        create_video(f"output_{i}", df.iloc[idx-20:idx+5])
+    with Progress() as progress:
+        prog = progress
+        task = progress.add_task("Creating videos...", total=len(signals))
+
+        for i, (idx, signal_type) in enumerate(signals):
+            progress.update(task, advance=1)
+            create_video(f"output_{i}", df.iloc[idx-20:idx+5])

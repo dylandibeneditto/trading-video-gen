@@ -30,7 +30,7 @@ styles = SimpleNamespace(
         text="#F5F5F5",
         up="#30D158",
         down="#FF453A",
-        grid="#2A2A2A"
+        grid="#1A1A1A"
     ),
     top_safe_area=50,
     trailing_safe_area=(100,100),
