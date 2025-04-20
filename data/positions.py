@@ -14,9 +14,11 @@ def add_indicators(df):
     return df
 
 def find_teaching_signals(df):
-    """Return a list of (index, signal_type) where 5+ candles move in one direction."""
+    """Return a list of (index, signal_type) where 5+ candles move in one direction with strength and confirmation."""
     signals = []
-    for i in range(5, len(df)):
+    df['volume_avg'] = df['Volume'].rolling(20).mean()
+
+    for i in range(20, len(df)):
         segment = df.iloc[i-5:i]
         close_series = segment['Close'].values
         open_series = segment['Open'].values
@@ -24,9 +26,17 @@ def find_teaching_signals(df):
         all_green = (close_series > open_series).all()
         all_red = (close_series < open_series).all()
 
-        if all_green:
+        start_price = segment['Open'].iloc[0].item()
+        end_price = segment['Close'].iloc[-1].item()
+        move_pct = abs(end_price - start_price) / start_price
+
+        rsi = df['rsi'].iloc[i].item()
+        volume_current = df['Volume'].iloc[i].item()
+        volume_avg = df['volume_avg'].iloc[i].item()
+
+        if all_green and move_pct > 0.01 and rsi < 70 and volume_current > volume_avg:
             signals.append((i, 'buy'))
-        elif all_red:
+        elif all_red and move_pct > 0.01 and rsi > 30 and volume_current > volume_avg:
             signals.append((i, 'short'))
 
     return signals

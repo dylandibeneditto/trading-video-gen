@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from fmov import Video
 import pandas as pd
 from numpy import array, matrix
@@ -34,7 +34,7 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
         pos = (video.height-styles.top_safe_area-styles.trailing_safe_area[1])/grid_lines[1]*y+styles.top_safe_area
         draw.rectangle((0, p(pos), p(ease_in_out(0, video.width, frame / total)), p(pos+1)), fill=styles.colors.grid)
 
-    candle_size = (styles.render.width-styles.trailing_safe_area[0]) / 25 - styles.candle_gap
+    candle_size = (styles.render.width-styles.trailing_safe_area[0]) / 45 - styles.candle_gap
     stagger = 0.15 # 0=no overlap, 1=fully overlapped
 
     final_close = df.iloc[-1]['Close'].item()
@@ -145,8 +145,8 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
         
         progress = frame / (total * 0.75)
 
-        max_idx = df.iloc[0:19]['High'].values.argmax()
-        min_idx = df.iloc[0:19]['Low'].values.argmin()
+        max_idx = df.iloc[0:39]['High'].values.argmax()
+        min_idx = df.iloc[0:39]['Low'].values.argmin()
 
         start_idx = min(max_idx, min_idx)
         end_idx = max(max_idx, min_idx)
@@ -196,5 +196,21 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
     background = Image.new("RGB", (video.width, video.height), styles.colors.background)
     background.paste(image, mask=mask)
     image = background
+
+    blur_amount = ease_out(8000, 0, (frame/total*0.3)/0.3)/1000
+
+    if blur_amount != 0:
+        focus_radius = 150
+        focus_softness = 80
+        focal_box = (video.width//2 - focus_radius, 0, video.width//2 + focus_radius, video.height)
+
+        blurred = image.filter(ImageFilter.GaussianBlur(radius=blur_amount))
+
+        mask = Image.new("L", image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rectangle(focal_box, fill=255)
+        mask = mask.filter(ImageFilter.GaussianBlur(radius=focus_softness))
+
+        image = Image.composite(image, blurred, mask)
 
     return image

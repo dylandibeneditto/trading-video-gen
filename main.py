@@ -16,7 +16,7 @@ def create_video(name, df):
         
         # intro, 5 seconds
         for i in range(video.seconds_to_frame(5)):
-            image = render_intro(video, i, video.seconds_to_frame(5), df.iloc[:20])
+            image = render_intro(video, i, video.seconds_to_frame(5), df.iloc[:40])
             video.pipe(image)
             if i == video.seconds_to_frame(5) - 1:
                 final_intro = image
@@ -26,7 +26,7 @@ def create_video(name, df):
 
 if __name__ == "__main__":
     ticker = "AAPL"
-    df = load_data(ticker, "2025-02-28", "2025-04-17", interval="5m")
+    df = load_data(ticker, "2000-01-01", "2025-04-17", interval="1d")
     df = add_indicators(df)
 
     signals = find_teaching_signals(df)
@@ -38,4 +38,4 @@ if __name__ == "__main__":
 
         for i, (idx, signal_type) in enumerate(signals):
             progress.update(task, advance=1)
-            create_video(f"output_{i}", df.iloc[idx-20:idx+5])
+            create_video(f"output_{i}", df.iloc[idx-40:idx+5])
