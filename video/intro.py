@@ -1,11 +1,22 @@
 from PIL import Image, ImageDraw
 from fmov import Video
 import pandas as pd
+from numpy import array, matrix
+import numpy as np
 
 from styles import styles, pm
-
 from video.utils.animate import ease_in_out, ease_in, ease_out, linear
 from video.utils.position import p
+
+def find_perspective_coeffs(src, dst):
+    matrix_list = []
+    for p1, p2 in zip(dst, src):
+        matrix_list.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+        matrix_list.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+    A = matrix(matrix_list, dtype=float)
+    B = array(src).reshape(8)
+    res = np.linalg.lstsq(A, B, rcond=None)[0]
+    return tuple(res)
 
 def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None:
     """
@@ -130,25 +141,23 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
     # zoom as intro
     if frame < total * 0.75:
 
-        zoom = ease_in_out(1250, 1000, (frame-total*0.1) / (total * 0.65)) / 1000
+        zoom = ease_in_out(3000, 1000, (frame-total*0.1) / (total * 0.65)) / 1000
         
         progress = frame / (total * 0.75)
 
-        # Smooth continuous path (no switching mid-flight)
         max_idx = df.iloc[0:19]['High'].values.argmax()
         min_idx = df.iloc[0:19]['Low'].values.argmin()
 
         start_idx = min(max_idx, min_idx)
         end_idx = max(max_idx, min_idx)
 
-        # interpolate along that one path the whole way
         path_cx = ease_in(candle_size * start_idx, candle_size * end_idx, progress)
         path_cy = ease_in(average(start_idx), average(end_idx), progress)
 
         center_cx = video.width / 2
         center_cy = video.height / 2
 
-        pull_strength = ease_out(0, 1000, progress) / 1000
+        pull_strength = ease_in_out(0, 1000, progress) / 1000
         momentum_strength = 1 - pull_strength
 
         cx = path_cx * momentum_strength + center_cx * pull_strength
@@ -160,7 +169,32 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
         top = cy - crop_height / 2
         right = cx + crop_width / 2
         bottom = cy + crop_height / 2
-        image = image.crop((p(left), p(top), p(right), p(bottom)))
-        image = image.resize((video.width, video.height), Image.Resampling.LANCZOS)
+
+        src = [
+            (left, top),
+            (right, top),
+            (right, bottom),
+            (left, bottom)
+        ]
+
+        perspective_strength = ease_in_out(3300, 0, (frame-total*0.1) / (total * 0.65)) / 1000
+        skew_x = video.width * 0.1 * perspective_strength
+        skew_y = video.height * 0.1 * perspective_strength
+
+        dst = [
+            (0 + skew_x, 0 + skew_y),
+            (video.width - skew_x, 0 + skew_y * 0.5),
+            (video.width, video.height),
+            (0, video.height - skew_y)
+        ]
+
+        coeffs = find_perspective_coeffs(src, dst)
+        image = image.transform((video.width, video.height), Image.PERSPECTIVE, coeffs, Image.Resampling.BICUBIC)
+
+    mask = image.convert("L").point(lambda p: 255 if p > 0 else 0)
+
+    background = Image.new("RGB", (video.width, video.height), styles.colors.background)
+    background.paste(image, mask=mask)
+    image = background
 
     return image

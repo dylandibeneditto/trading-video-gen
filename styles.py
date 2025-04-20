@@ -14,6 +14,15 @@ font_paths = {
     "italic": "./video/assets/fonts/SF-Pro-Display-RegularItalic.otf",
 }
 
+if setting == "debug anim":
+    pm = 0.5
+elif setting == "debug image":
+    pm = 1.5
+    styles.render.fps = 10
+if setting == "debug":
+    pm = 0.5
+    styles.render.fps = 10
+
 styles = SimpleNamespace(
     render=SimpleNamespace(
         width=1080*pm,
@@ -37,11 +46,3 @@ styles = SimpleNamespace(
     candle_gap=8,
 )
 
-if setting == "debug anim":
-    pm = 0.5
-elif setting == "debug image":
-    pm = 1.5
-    styles.render.fps = 10
-if setting == "debug":
-    pm = 0.5
-    styles.render.fps = 10

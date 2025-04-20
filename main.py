@@ -1,7 +1,7 @@
 from fmov import Video
 from rich.progress import Progress, track
 
-from styles import styles
+from styles import styles, pm
 from video.intro import render_intro
 
 from data.positions import load_data, add_indicators, find_teaching_signals
