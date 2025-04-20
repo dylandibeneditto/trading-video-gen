@@ -41,8 +41,8 @@ styles = SimpleNamespace(
         down="#FF453A",
         grid="#1A1A1A"
     ),
-    top_safe_area=50,
-    trailing_safe_area=(100,100),
+    top_safe_area=150,
+    trailing_safe_area=(100,400),
     candle_gap=8,
 )
 

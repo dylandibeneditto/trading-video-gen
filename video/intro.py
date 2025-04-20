@@ -41,7 +41,11 @@ def render_intro(video: Video, frame: int, total: int, df: pd.DataFrame) -> None
     screen_middle = video.height / 2
     min_price = df[['Open', 'Close', 'High', 'Low']].min().min()
     max_price = df[['Open', 'Close', 'High', 'Low']].max().max()
-    normalize = lambda price: video.height - (screen_middle - (final_close - price) / (max_price - min_price) * (video.height / 2 - 100))
+    price_range_height = video.height - styles.top_safe_area - styles.trailing_safe_area[1]
+    center_y = video.height / 2
+    normalize = lambda price: (
+        center_y - ((price - final_close) / (max_price - min_price)) * price_range_height / 2
+    )
 
     num_candles = len(df)
     step = total / (num_candles + (num_candles - 1) * (1-stagger))
